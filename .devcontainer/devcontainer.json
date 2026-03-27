@@ -37,7 +37,8 @@
                 "brunnerh.insert-unicode",
                 "mhutchie.git-graph",
                 "ms-vscode.live-server",
-                "github.vscode-github-actions"
+                "github.vscode-github-actions",
+                "mads-hartmann.bash-ide-vscode"
             ]
         }
     }
