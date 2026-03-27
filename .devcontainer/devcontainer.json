@@ -9,6 +9,7 @@
     },
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
     "features": {
+        "ghcr.io/thediveo/devcontainer-features/bpftool:0": {},
         "ghcr.io/thediveo/devcontainer-features/go-ebpf:0": {},
         "ghcr.io/thediveo/devcontainer-features/local-pkgsite:0": {},
         "ghcr.io/thediveo/devcontainer-features/goreportcard:0": {},
