@@ -1,8 +1,11 @@
 module github.com/thediveo/beenum
 
-go 1.26.1
+go 1.25.0
 
-require github.com/cilium/ebpf v0.21.0
+require (
+	github.com/cilium/ebpf v0.21.0
+	github.com/thediveo/opt v0.1.0
+)
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect

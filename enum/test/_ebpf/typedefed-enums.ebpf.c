@@ -23,3 +23,7 @@ typedef enum: signed char {
     NOT_MAX = -127,
 } shortdefines;
 static __attribute__((used)) shortdefines __shortdefines;
+
+// Some other typedef to throw off any enum scents...
+typedef struct { int b; } foobar;
+static __attribute__((used)) foobar __foobar = { 42 };

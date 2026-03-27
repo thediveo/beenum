@@ -19,25 +19,26 @@ import (
 	"strconv"
 
 	"github.com/cilium/ebpf/btf"
+	"github.com/thediveo/opt"
 )
 
-// TypedefedEnum represents an “typedef enum { ... } NAME;” including the
-// enumerated elements.
-type TypedefedEnum struct {
+// TypedefEnum represents an “typedef enum { ... } NAME;” including the
+// enumerated named values.
+type TypedefEnum struct {
 	name string
 	enum *btf.Enum
 }
 
-// Name returns the typedef'ed name of the enumeration.
-func (te *TypedefedEnum) Name() string { return te.name }
+// Name returns the type name of the enumeration.
+//
+// Important: do not confuse the type name with the name of the enumeration, if
+// any.
+func (te *TypedefEnum) Name() string { return te.name }
 
-// Gotype returns the name of the Go type that can represent this typedef'ed
-// enumeration.
-func (te *TypedefedEnum) Gotype() string {
-	vt := ""
-	if !te.enum.Signed {
-		vt = "u"
-	}
+// Gotype returns the name of the Go type that can represent the values of this
+// typedef'ed enumeration, such as “uint32”, “int8”, et cetera.
+func (te *TypedefEnum) Gotype() string {
+	vt := opt.If[string](!te.enum.Signed).Then("u").Else("")
 	switch te.enum.Size {
 	case 1:
 		vt += "int8"
@@ -51,14 +52,12 @@ func (te *TypedefedEnum) Gotype() string {
 	return vt
 }
 
-// AllElements iterates over all elements of this typedef'ed enum, producing
-// (name, formatted-value) pairs.
-func (te *TypedefedEnum) AllElements() iter.Seq2[string, string] {
+// AllElements iterates over all named values of this typedef'ed enum, producing
+// (name, formatted-value) pairs, taking signed-ness correctly into consideration.
+func (te *TypedefEnum) AllElements() iter.Seq2[string, string] {
 	return func(yield func(string, string) bool) {
-		formatFn := strconv.FormatUint
-		if te.enum.Signed {
-			formatFn = formatInt
-		}
+		formatFn := opt.If[func(uint64, int) string](te.enum.Signed).
+			Then(formatInt).Else(strconv.FormatUint)
 		for _, enumval := range te.enum.Values {
 			if !yield(enumval.Name, formatFn(enumval.Value, 10)) {
 				return
@@ -72,8 +71,8 @@ func formatInt(i uint64, base int) string { return strconv.FormatInt(int64(i), b
 // AllTypedefedEnums iterates over all typedefs for an BTF enumeration type,
 // return the name of the typedef as well the enumeration type. On purpose,
 // AllTypedefedEnums ignores nested typedef's of enums.
-func AllTypedefedEnums(spec *btf.Spec) iter.Seq[*TypedefedEnum] {
-	return func(yield func(*TypedefedEnum) bool) {
+func AllTypedefedEnums(spec *btf.Spec) iter.Seq[*TypedefEnum] {
+	return func(yield func(*TypedefEnum) bool) {
 		for typ, err := range spec.All() {
 			if err != nil {
 				return // first encountered error aborts spec iterator
@@ -82,12 +81,12 @@ func AllTypedefedEnums(spec *btf.Spec) iter.Seq[*TypedefedEnum] {
 			if !ok {
 				continue
 			}
-			// no btf.As on purpose, as we deal only with flat definitions.
+			// no btf.As here on purpose, as we deal only with flat definitions.
 			enumT, ok := typedefT.Type.(*btf.Enum)
 			if !ok {
 				continue
 			}
-			if !yield(&TypedefedEnum{name: typedefT.Name, enum: enumT}) {
+			if !yield(&TypedefEnum{name: typedefT.Name, enum: enumT}) {
 				return
 			}
 		}
