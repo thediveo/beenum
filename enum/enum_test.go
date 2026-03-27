@@ -15,7 +15,7 @@
 package enum
 
 import (
-	"maps"
+	"slices"
 
 	"github.com/cilium/ebpf/btf"
 
@@ -29,23 +29,27 @@ var _ = Describe("ebpf enums", Ordered, func() {
 	var spec *btf.Spec
 
 	BeforeAll(func() {
-		spec = Successful(btf.LoadSpec("../examples/config/config_bpfel.o"))
+		spec = Successful(btf.LoadSpec("./test/test_bpfel.o"))
 	})
 
 	It("iterates over typedef'ed enumerations in a spec", func() {
-		tenums := maps.Collect(AllTypedefedEnums(spec))
-		Expect(tenums).To(HaveLen(1))
-		Expect(tenums).To(HaveKeyWithValue(
-			"defines",
-			HaveField("Values", ContainElements(
-				HaveField("Name", "MAX_BEES"),
-				HaveField("Name", "DEFAULT_FOOBAR")))))
+		tenums := slices.Collect(AllTypedefedEnums(spec))
+		Expect(tenums).To(HaveLen(2))
+		Expect(tenums).To(ConsistOf(
+			And(HaveField("Name()", "defines"),
+				HaveField("Gotype()", "uint64"),
+				HaveField("AllElements()", HaveKeyWithValue("DEFAULT_FOOBAR", "281474976710656"))),
+			And(HaveField("Name()", "shortdefines"),
+				HaveField("Gotype()", "int8"),
+				HaveField("AllElements()", HaveKeyWithValue("NOT_MAX", "-127")))))
 	})
 
 	It("iterates over the enumerations in a spec", func() {
 		Expect(AllEnums(spec)).To(ConsistOf(
 			HaveField("Values", ContainElement(
-				HaveField("Name", "MAX_BEES")))))
+				HaveField("Name", "MAX_BEES"))),
+			HaveField("Values", ContainElement(
+				HaveField("Name", "NOT_MAX")))))
 	})
 
 })
